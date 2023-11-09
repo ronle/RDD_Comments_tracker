@@ -95,7 +95,8 @@ def logger(e):
     formatter = logging.Formatter ('%(asctime)s - %(levelname)s - %(message)s') #Create a formatter object
     fh.setFormatter (formatter)             #Set the formatter for the file handler
     logger.addHandler (fh)                  #Add the file handler to the logger
-    logger.exception(e)
+    #logger.exception(e)
+    logger.error(e)
     return (fh)
 
         
