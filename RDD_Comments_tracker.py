@@ -102,7 +102,14 @@ def logger(e):
 while carryOn:
     
     if not os.path.exists(logFileName):
-        fh = logger()
+        fh = logger(None)
+    
+    if curr_date != prev_date:
+        handleFile(data, jsonFileName)
+        fh.close()
+        jsonFileName = 'outJsonFile' + curr_date.strftime("%Y%m%d") +'.json'
+        logFileName = 'log' + curr_date.strftime("%Y%m%d") +'.txt'
+        prev_date = curr_date
      
     try:    
         with open(jsonFileName, 'r') as rf: # Opens json in all actions allowed mode    
@@ -162,12 +169,5 @@ while carryOn:
     except Exception as e: # in case of major error, log that error into log file
         logger(e)
         time.sleep(60)
-            
-    if curr_date != prev_date:
-        handleFile(data, jsonFileName)
-        fh.close()
-        jsonFileName = 'outJsonFile' + curr_date.strftime("%Y%m%d") +'.json'
-        logFileName = 'log' + curr_date.strftime("%Y%m%d") +'.txt'
-        prev_date = curr_date
 
 fh.close()
