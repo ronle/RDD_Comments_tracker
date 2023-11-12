@@ -30,17 +30,13 @@ triggersFileName = args.triggers
 file = open(triggersFileName, "r")
 triggersList = file.readlines()
 triggersList = [line.strip() for line in triggersList] # Strip whitespace characters from each line
+triggersList = [word.lower() for word in triggersList]
 
 print("Listening to [" + subRedditStr +"] subReddit")
 print("Triggers to look for: ",triggersList)
 
 #Keep running after exception error
 carryOn = True
-
-# Initialize the date variables to be used in file names
-# and for creating new files at end of each day
-prev_date = datetime.date.today()
-curr_date = datetime.date.today() 
 
 # All reddit bot IDs should go into "Credentials.json" file
 credentials = 'credentials.json'
@@ -56,6 +52,10 @@ reddit = praw.Reddit(
     password = creds['password'],
     user_agent = creds['user_agent']
     )
+
+# Initialize the date variables to be used in file names
+# and for creating new files at end of each day
+prev_date = datetime.date.today()
 
 jsonFileName = 'outJsonFile' + prev_date.strftime("%Y%m%d") +'.json'
 logFileName = 'log' + prev_date.strftime("%Y%m%d") +'.txt'
@@ -101,17 +101,17 @@ def logger(e):
 
         
 while carryOn:
-    
-    if not os.path.exists(logFileName):
-        fh = logger(None)
-    
+    curr_date = datetime.date.today() 
+      
     if curr_date != prev_date:
         handleFile(data, jsonFileName)
-        fh.close()
         jsonFileName = 'outJsonFile' + curr_date.strftime("%Y%m%d") +'.json'
         logFileName = 'log' + curr_date.strftime("%Y%m%d") +'.txt'
         prev_date = curr_date
-     
+    
+    if not os.path.exists(logFileName):
+        fh = logger(None)
+         
     try:    
         with open(jsonFileName, 'r') as rf: # Opens json in all actions allowed mode    
             data = json.load(rf)
