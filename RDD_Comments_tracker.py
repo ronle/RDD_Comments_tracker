@@ -60,6 +60,29 @@ prev_date = datetime.date.today()
 jsonFileName = 'outJsonFile' + prev_date.strftime("%Y%m%d") +'.json'
 logFileName = 'log' + prev_date.strftime("%Y%m%d") +'.txt'
 
+#create logger and open initial log file
+logging.basicConfig(level=logging.ERROR, filename=logFileName, filemode='a')
+
+# Get the logger object
+logger = logging.getLogger()
+
+# Define a function that changes the log file name
+def change_log_file(new_filename):
+    # Get the old file handler
+    old_handler = logger.handlers[0]
+    # Close the old file handler
+    old_handler.close()
+    # Remove the old file handler from the logger
+    logger.removeHandler(old_handler)
+    # Create a new file handler with the new file name
+    new_handler = logging.FileHandler(new_filename, mode='a')
+    # Set the logging level and the formatter for the new file handler
+    new_handler.setLevel(logging.ERROR)
+    new_handler.setFormatter(old_handler.formatter)
+    # Add the new file handler to the logger
+    logger.addHandler(new_handler)
+
+
 #handle any file writes needed
 def handleFile(dataToWrite, fileName):
     with open(fileName, 'w') as f:
@@ -68,54 +91,40 @@ def handleFile(dataToWrite, fileName):
 
 #check if json file exist in the script path
 #if not, a file is created and initial template record is created.
-def createNewFile():
-    if not os.path.exists(jsonFileName):
-        with open(jsonFileName, 'w') as f:
-            template = textwrap.dedent("""
-            [
-                {
-                "id": 1,
-                "author_name": "John Doe",
-                "author_id": "JohnDoe",
-                "subReddit": "test",
-                "commentsList":[
-                    "None"
-                    ]
-                }
-            ]
-            """)
-            f.write(template)
-            f.close()
-
-#Instantiate logger object
-def logger(e):
-    logger = logging.getLogger ('mylogger') #Create a logger object
-    logger.setLevel (logging.ERROR)         #Set the logging level to ERROR   
-    fh = logging.FileHandler (logFileName)    #Create a file handler object
-    formatter = logging.Formatter ('%(asctime)s - %(levelname)s - %(message)s') #Create a formatter object
-    fh.setFormatter (formatter)             #Set the formatter for the file handler
-    logger.addHandler (fh)                  #Add the file handler to the logger
-    #logger.exception(e)
-    logger.error(e)
-    return (fh)
-
+def writeTemplate(fileName):
+    with open(fileName, 'w') as f:
+        template = textwrap.dedent("""
+        [
+            {
+            "id": 1,
+            "author_name": "John Doe",
+            "author_id": "JohnDoe",
+            "subReddit": "test",
+            "commentsList":[
+                "None"
+                ]
+            }
+        ]
+        """)
+        f.write(template)
+    f.close()
         
 while carryOn:
     curr_date = datetime.date.today() 
       
     if curr_date != prev_date:
-        handleFile(data, jsonFileName)
         jsonFileName = 'outJsonFile' + curr_date.strftime("%Y%m%d") +'.json'
-        logFileName = 'log' + curr_date.strftime("%Y%m%d") +'.txt'
+        newLogFileName = 'Log' + curr_date.strftime("%Y%m%d") +'.txt'
+        change_log_file(newLogFileName)
         prev_date = curr_date
-    
-    if not os.path.exists(logFileName):
-        fh = logger(None)
-         
+          
     try:    
-        with open(jsonFileName, 'r') as rf: # Opens json in all actions allowed mode    
-            data = json.load(rf)
-
+        with open(jsonFileName, 'a+') as rf: # Opens json in all actions allowed mode    
+            if not os.path.getsize(jsonFileName) == 0:
+                data = json.load(rf)
+            else:
+               writeTemplate(jsonFileName) 
+               
             # Begins the comment stream, scans for new comments
             # listent to the specific mentioned subreddit (in this case "All")
             for comment in reddit.subreddit(subRedditStr).stream.comments(skip_existing=True):
@@ -158,17 +167,15 @@ while carryOn:
                             }
                         data.append(newRecord)
                         handleFile(data, jsonFileName)
-    except FileNotFoundError:
-        createNewFile()
+    # except FileNotFoundError:
+    #     createNewFile()
         
     except KeyboardInterrupt:
         carryOn = False
         handleFile(data, jsonFileName)
-        fh.close()
+        logger.close()
         sys.exit(0)
 
     except Exception as e: # in case of major error, log that error into log file
-        logger(e)
+        logger.error(e)
         time.sleep(60)
-
-fh.close()
