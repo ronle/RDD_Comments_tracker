@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(
     description='This program listens to specific subreddit and collect all comments with specific keywords',
     argument_default=argparse.SUPPRESS
 )
-parser.add_argument("-s","--subReddit", nargs='?', default="all")
+parser.add_argument("-s","--subReddit", nargs='?', default="test")
 parser.add_argument("-t","--triggers", nargs='?', default="triggersList.txt")
 
 args = parser.parse_args()
@@ -93,21 +93,21 @@ def handleFile(dataToWrite, fileName):
 #if not, a file is created and initial template record is created.
 def writeTemplate(fileName):
     with open(fileName, 'w') as f:
-        template = textwrap.dedent("""
-        [
-            {
-            "id": 1,
-            "author_name": "John Doe",
-            "author_id": "JohnDoe",
-            "subReddit": "test",
-            "commentsList":[
-                "None"
-                ]
-            }
+        template = textwrap.dedent(
+    """[
+    {
+    "id": 1,
+    "author_name": "John Doe",
+    "author_id": "JohnDoe",
+    "subReddit": "test",
+    "commentsList":[
+        "None"
         ]
-        """)
+    }
+]
+""")
         f.write(template)
-    f.close()
+        f.close()
         
 while carryOn:
     curr_date = datetime.date.today() 
@@ -118,12 +118,15 @@ while carryOn:
         change_log_file(newLogFileName)
         prev_date = curr_date
           
-    try:    
-        with open(jsonFileName, 'a+') as rf: # Opens json in all actions allowed mode    
-            if not os.path.getsize(jsonFileName) == 0:
-                data = json.load(rf)
-            else:
-               writeTemplate(jsonFileName) 
+    try:
+        if not os.path.exists(jsonFileName):
+            writeTemplate(jsonFileName)
+            
+        with open(jsonFileName, 'r') as rf: # Opens json in all actions allowed mode    
+            # if not os.path.getsize(jsonFileName) == 0:
+            data = json.load(rf)
+            # else:
+            #    writeTemplate(jsonFileName) 
                
             # Begins the comment stream, scans for new comments
             # listent to the specific mentioned subreddit (in this case "All")
